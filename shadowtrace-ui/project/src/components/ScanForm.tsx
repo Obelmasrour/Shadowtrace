@@ -18,7 +18,6 @@ const ScanForm: React.FC<ScanFormProps> = ({
   onScan,
   onGenerateReport,
   isScanning,
-  isTestingXSS,
   isGeneratingReport,
   hasResults
 }) => {
@@ -36,14 +35,14 @@ const ScanForm: React.FC<ScanFormProps> = ({
           value={url}
           onChange={onUrlChange}
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-          disabled={isScanning || isTestingXSS || isGeneratingReport}
+          disabled={isScanning || isGeneratingReport}
         />
       </div>
       
       <div className="flex flex-wrap gap-3">
         <button
           onClick={onScan}
-          disabled={isScanning || isTestingXSS || isGeneratingReport}
+          disabled={isScanning || isGeneratingReport}
           className={`flex items-center px-4 py-2 rounded-md text-white font-medium ${
             isScanning ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
           }`}
@@ -54,7 +53,7 @@ const ScanForm: React.FC<ScanFormProps> = ({
         
         <button
           onClick={onGenerateReport}
-          disabled={!hasResults || isScanning || isTestingXSS || isGeneratingReport}
+          disabled={!hasResults || isScanning || isGeneratingReport}
           className={`flex items-center px-4 py-2 rounded-md text-white font-medium ${
             !hasResults || isGeneratingReport ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
           }`}

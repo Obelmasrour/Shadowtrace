@@ -34,7 +34,6 @@ function App() {
 
       const results = await response.json();
       setScanResults(results);
-      setXssResults(null);
     } catch (err) {
       setError("Failed to scan website. Please try again.");
       console.error(err);
@@ -43,12 +42,6 @@ function App() {
     }
   };
 
-  const handleTestXSS = async () => {
-    if (!url) {
-      setError("Please enter a URL to test");
-      return;
-    }
-  };
 
   const handleGenerateReport = async () => {
     if (!scanResults?.scanId) {
@@ -87,7 +80,6 @@ function App() {
             url={url} 
             onUrlChange={handleUrlChange} 
             onScan={handleScan} 
-            onTestXSS={handleTestXSS}
             onGenerateReport={handleGenerateReport}
             isScanning={isScanning}
             isGeneratingReport={isGeneratingReport}
