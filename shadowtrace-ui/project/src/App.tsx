@@ -122,7 +122,7 @@ function App() {
         <div className="container mx-auto px-4 text-center">
           <p>ShadowTrace Security Scanner &copy; 2025</p>
           <p className="text-gray-400 text-sm mt-2">
-            Powered by OWASP ZAP and Playwright
+            Powered by OWASP ZAP
           </p>
         </div>
       </footer>
