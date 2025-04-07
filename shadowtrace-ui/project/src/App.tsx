@@ -1,4 +1,4 @@
-import { AlertTriangle, Shield, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Shield } from 'lucide-react';
 import React, { useState } from 'react';
 import Header from './components/Header';
 import LoadingIndicator from './components/LoadingIndicator';
@@ -8,9 +8,7 @@ import VulnerabilityTable from './components/VulnerabilityTable';
 function App() {
   const [url, setUrl] = useState<string>('');
   const [scanResults, setScanResults] = useState<any>(null);
-  const [xssResults, setXssResults] = useState<any>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
-  const [isTestingXSS, setIsTestingXSS] = useState<boolean>(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +32,6 @@ function App() {
       });
       const results = await response.json();
       setScanResults(results);
-      setXssResults(null);
     } catch (err) {
       setError("Failed to scan website. Please try again.");
       console.error(err);
@@ -47,23 +44,6 @@ function App() {
     if (!url) {
       setError("Please enter a URL to test");
       return;
-    }
-
-    try {
-      setError(null);
-      setIsTestingXSS(true);
-      const response = await fetch('http://localhost:5000/test-xss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      });
-      const result = await response.json();
-      setXssResults(result);
-    } catch (err) {
-      setError("Failed to test for XSS vulnerabilities. Please try again.");
-      console.error(err);
-    } finally {
-      setIsTestingXSS(false);
     }
   };
 
@@ -107,7 +87,6 @@ function App() {
             onTestXSS={handleTestXSS}
             onGenerateReport={handleGenerateReport}
             isScanning={isScanning}
-            isTestingXSS={isTestingXSS}
             isGeneratingReport={isGeneratingReport}
             hasResults={!!scanResults}
           />
@@ -124,24 +103,8 @@ function App() {
           <LoadingIndicator message="Scanning website for vulnerabilities..." />
         )}
 
-        {isTestingXSS && (
-          <LoadingIndicator message="Testing for XSS vulnerabilities..." />
-        )}
-
         {isGeneratingReport && (
           <LoadingIndicator message="Generating security report..." />
-        )}
-
-        {xssResults && !isTestingXSS && (
-          <div className={`mb-8 p-4 rounded-md ${xssResults.vulnerable ? 'bg-red-100' : 'bg-green-100'}`}>
-            <h3 className={`text-lg font-semibold mb-2 flex items-center ${xssResults.vulnerable ? 'text-red-700' : 'text-green-700'}`}>
-              <ShieldAlert size={20} className="mr-2" />
-              XSS Test Results
-            </h3>
-            <p className={xssResults.vulnerable ? 'text-red-700' : 'text-green-700'}>
-              {xssResults.details}
-            </p>
-          </div>
         )}
 
         {scanResults?.vulnerabilities?.length > 0 && (

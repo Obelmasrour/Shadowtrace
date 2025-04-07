@@ -1,11 +1,10 @@
-import { FileText, Search, ShieldAlert } from 'lucide-react'
+import { FileText, Search } from 'lucide-react'
 import React from 'react'
 
 interface ScanFormProps {
   url: string
   onUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onScan: () => void
-  onTestXSS: () => void
   onGenerateReport: () => void
   isScanning: boolean
   isTestingXSS: boolean
@@ -17,7 +16,6 @@ const ScanForm: React.FC<ScanFormProps> = ({
   url,
   onUrlChange,
   onScan,
-  onTestXSS,
   onGenerateReport,
   isScanning,
   isTestingXSS,
@@ -52,17 +50,6 @@ const ScanForm: React.FC<ScanFormProps> = ({
         >
           <Search size={18} className="mr-2" />
           {isScanning ? 'Scanning...' : 'Scan Website'}
-        </button>
-        
-        <button
-          onClick={onTestXSS}
-          disabled={isScanning || isTestingXSS || isGeneratingReport}
-          className={`flex items-center px-4 py-2 rounded-md text-white font-medium ${
-            isTestingXSS ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
-          }`}
-        >
-          <ShieldAlert size={18} className="mr-2" />
-          {isTestingXSS ? 'Testing...' : 'Test XSS'}
         </button>
         
         <button
