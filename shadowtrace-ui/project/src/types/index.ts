@@ -1,17 +1,17 @@
 export interface Vulnerability {
-  id: number;
-  name: string;
-  riskLevel: string;
-  description: string;
-  fix: string;
+  alert: string
+  risk: string
+  url?: string
+  description?: string
+  solution?: string
 }
 
 export interface ScanResult {
-  scanId: string;
-  vulnerabilities: Vulnerability[];
+  scanId: string
+  alerts: Vulnerability[]
 }
 
 export interface XSSTestResult {
-  vulnerable: boolean;
-  details: string;
+  success: boolean
+  message: string
 }
