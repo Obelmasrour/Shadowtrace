@@ -27,13 +27,21 @@ function App() {
     try {
       setError(null);
       setIsScanning(true);
+
       const response = await fetch('http://localhost:5000/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
+
       const results = await response.json();
-      setScanResults(results);
+
+      // Si le backend retourne bien des vulnérabilités
+      setScanResults({
+        scanId: results.scanId,
+        vulnerabilities: results.vulnerabilities || [],
+      });
+
       setXssResults(null);
     } catch (err) {
       setError("Failed to scan website. Please try again.");
@@ -144,13 +152,18 @@ function App() {
           </div>
         )}
 
-        {scanResults?.vulnerabilities?.length > 0 && (
+        {scanResults && !isScanning && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold mb-4 flex items-center">
               <Shield size={24} className="mr-2 text-red-600" />
               Scan Results
             </h2>
-            <VulnerabilityTable vulnerabilities={scanResults.vulnerabilities} />
+
+            {scanResults.vulnerabilities.length > 0 ? (
+              <VulnerabilityTable vulnerabilities={scanResults.vulnerabilities} />
+            ) : (
+              <p className="text-gray-600">Aucune vulnérabilité détectée 🎉</p>
+            )}
           </div>
         )}
       </main>
