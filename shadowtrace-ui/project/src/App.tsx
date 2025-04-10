@@ -34,6 +34,7 @@ function App() {
       });
 
       const results = await response.json();
+      console.log("Résultats reçus du backend :", results); // 🔍 debug utile
 
       setScanResults({
         scanId: results.scanId,
@@ -133,7 +134,7 @@ function App() {
               </select>
             </div>
 
-            {filteredVulnerabilities.length > 0 ? (
+            {filteredVulnerabilities && filteredVulnerabilities.length > 0 ? (
               <VulnerabilityTable vulnerabilities={filteredVulnerabilities} />
             ) : (
               <p className="text-gray-600">Aucune vulnérabilité détectée 🎉</p>
