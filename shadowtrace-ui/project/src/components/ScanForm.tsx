@@ -1,4 +1,4 @@
-import { FileText, Search } from 'lucide-react';
+import { FileText, Search, AlertTriangle, ClipboardCopy } from 'lucide-react';
 import React from 'react';
 
 interface ScanFormProps {
@@ -11,6 +11,9 @@ interface ScanFormProps {
   hasResults: boolean;
 }
 
+// 🧠 Clé d'autorisation simulée (à lier plus tard à un vrai utilisateur)
+const YOUR_VERIFICATION_KEY = "shadowtrace-verification=shadowtrace-localkey-123";
+
 const ScanForm: React.FC<ScanFormProps> = ({
   url,
   onUrlChange,
@@ -20,10 +23,38 @@ const ScanForm: React.FC<ScanFormProps> = ({
   isGeneratingReport,
   hasResults,
 }) => {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(YOUR_VERIFICATION_KEY);
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Website Security Scanner</h2>
 
+      {/* 🔔 Alerte : clé DNS requise */}
+      <div className="mb-4 p-3 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-md flex items-start gap-2 text-sm">
+        <AlertTriangle size={18} className="mt-0.5" />
+        <span>
+          <strong>Important :</strong> Avant d'effectuer un scan, vous devez ajouter une entrée DNS <code>TXT</code> dans le domaine cible avec la clé <code>shadowtrace-verification</code>. 
+          Cette vérification est obligatoire pour s’assurer que vous avez l’autorisation de scanner ce site.
+        </span>
+      </div>
+
+      {/* 📋 Clé visible et copiable */}
+      <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-md text-sm flex items-center justify-between">
+        <span>
+          <strong>Votre clé DNS à insérer :</strong>{' '}
+          <code>{YOUR_VERIFICATION_KEY}</code>
+        </span>
+        <button
+          onClick={handleCopy}
+          className="ml-4 text-blue-700 hover:underline text-sm flex items-center"
+        >
+          <ClipboardCopy size={16} className="mr-1" /> Copier
+        </button>
+      </div>
+
+      {/* 🌐 Formulaire URL */}
       <div className="mb-4">
         <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
           Target URL
@@ -39,6 +70,7 @@ const ScanForm: React.FC<ScanFormProps> = ({
         />
       </div>
 
+      {/* 🛠️ Boutons actions */}
       <div className="flex flex-wrap gap-3">
         {/* Scan Button */}
         <button
@@ -52,7 +84,7 @@ const ScanForm: React.FC<ScanFormProps> = ({
           {isScanning ? 'Scanning...' : 'Scan Website'}
         </button>
 
-        {/* PDF Report Button */}
+        {/* Generate Report Button */}
         <button
           onClick={onGenerateReport}
           disabled={!hasResults || isScanning || isGeneratingReport}

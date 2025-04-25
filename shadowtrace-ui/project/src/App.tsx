@@ -33,8 +33,14 @@ function App() {
         body: JSON.stringify({ url }),
       });
 
+      if (response.status === 403) {
+        const { error } = await response.json();
+        setError(error || "Unauthorized to scan this domain.");
+        return;
+      }
+
       const results = await response.json();
-      console.log("Résultats reçus du backend :", results); // 🔍 debug utile
+      console.log("Résultats reçus du backend :", results);
 
       setScanResults({
         scanId: results.scanId,
