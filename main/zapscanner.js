@@ -30,7 +30,7 @@ async function activeScan() {
       }
     });
 
-    console.log("🔥 Active Scan lancé ! ID :", res.data.scan);
+    console.log("Active Scan lancé ! ID :", res.data.scan);
   } catch (err) {
     console.error("Erreur Active Scan :", err.message);
   }

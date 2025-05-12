@@ -22,26 +22,27 @@ function App() {
       setError("Please enter a URL to scan");
       return;
     }
-
+  
     try {
+      setScanResults(null); // supprime les anciens resultats 
       setError(null);
       setIsScanning(true);
-
+  
       const response = await fetch('http://localhost:5000/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
-
+  
       if (response.status === 403) {
         const { error } = await response.json();
         setError(error || "Unauthorized to scan this domain.");
         return;
       }
-
+  
       const results = await response.json();
       console.log("Résultats reçus du backend :", results);
-
+  
       setScanResults({
         scanId: results.scanId,
         vulnerabilities: results.vulnerabilities || [],
@@ -53,29 +54,37 @@ function App() {
       setIsScanning(false);
     }
   };
+  
 
   const handleGenerateReport = async () => {
-    if (!scanResults?.scanId) {
+    if (!scanResults?.vulnerabilities?.length) {
       setError("Please scan a website first");
       return;
     }
-
+  
     try {
       setError(null);
       setIsGeneratingReport(true);
-
+  
       const response = await fetch('http://localhost:5000/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vulnerabilities: scanResults.vulnerabilities }),
       });
-
-      const data = await response.json();
-
+  
+      if (!response.ok) {
+        throw new Error("Erreur lors de la génération du PDF");
+      }
+  
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+  
       const a = document.createElement('a');
-      a.href = data.reportUrl;
+      a.href = url;
       a.download = 'shadowtrace_report.pdf';
+      document.body.appendChild(a);
       a.click();
+      a.remove();
     } catch (err) {
       setError("Failed to generate report. Please try again.");
       console.error(err);
@@ -83,6 +92,7 @@ function App() {
       setIsGeneratingReport(false);
     }
   };
+  
 
   const filteredVulnerabilities = scanResults?.vulnerabilities?.filter((vuln: any) => {
     return riskFilter === 'All' || vuln.risk === riskFilter;

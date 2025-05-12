@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const axios = require("axios");
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
-const dns = require("dns").promises;
+const dns = require("dns").promises; //cette commande qui remplace dig pour la verification pour faire des verifications dns
 
 dotenv.config();
 
@@ -14,38 +14,41 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// ZAP API config
+// ZAP API config , faut pas la changer apres !!!!!
 const ZAP_API = "http://localhost:8081";
 const ZAP_API_KEY = "q7p2qv6jl2l0rkj21jfm5ml0ea";
 
-// Domaines autorisés et clés DNS simulées
+// mon domaines autorisés pour faire le test 
 const CLE_DNS_PAR_DOMAINE = {
-  "localhost": "shadowtrace-localkey-123"
+  "localhost": "shadowtrace-localkey-123" //c pas une clé perso  //dig -t txt domaine
 };
 
-// ✅ Vérifie si un domaine est autorisé
-async function verifierCleDNS(domaine) {
-  // Mode test local (bypass DNS)
-  if (domaine === "localhost") return true;
 
-  const cleAttendue = CLE_DNS_PAR_DOMAINE[domaine];
-  if (!cleAttendue) return false;
+const CLÉ_ATTENDUE = "shadowtrace-localkey-123";
+
+async function verifierCleDNS(domaine) {
+  if (domaine === "localhost") return true;
 
   try {
     const records = await dns.resolveTxt(domaine);
     const flat = records.flat().map(r => r.toString());
-    return flat.includes(`shadowtrace-verification=${cleAttendue}`);
+
+    console.log(`TXT DNS pour ${domaine} :`, flat);
+
+    // Rechercher la clé
+    return flat.includes(`shadowtrace-verification=${CLÉ_ATTENDUE}`);
   } catch (error) {
-    console.error(`Erreur DNS (${domaine}) :`, error.message);
+    console.error(`Erreur DNS pour ${domaine} :`, error.message);
     return false;
   }
 }
 
+// api zap 
 app.get("/", (req, res) => {
   res.send("ShadowTrace API is running...");
 });
 
-// ✅ Route principale de scan
+// Route principale de scan
 app.post("/scan", async (req, res) => {
   const { url } = req.body;
   console.log("Requête reçue pour scanner :", url);
@@ -64,12 +67,12 @@ app.post("/scan", async (req, res) => {
   }
 
   try {
-    // 1. Spider
+    // lance Spider 
     await axios.get(`${ZAP_API}/JSON/spider/action/scan/`, {
       params: { apikey: ZAP_API_KEY, url, recurse: true }
     });
 
-    // 2. Attente du spider
+    // Attente du spider
     let spiderStatus = 0;
     while (spiderStatus < 100) {
       const { data } = await axios.get(`${ZAP_API}/JSON/spider/view/status/`, {
@@ -79,7 +82,7 @@ app.post("/scan", async (req, res) => {
       await new Promise(r => setTimeout(r, 1000));
     }
 
-    // 3. Scan actif
+    // Scan actif zap
     const scanRes = await axios.get(`${ZAP_API}/JSON/ascan/action/scan/`, {
       params: {
         apikey: ZAP_API_KEY,
@@ -91,7 +94,7 @@ app.post("/scan", async (req, res) => {
 
     const scanId = scanRes.data.scan;
 
-    // 4. Attente scan actif
+    // Attent scan actif
     let scanProgress = 0;
     while (scanProgress < 100) {
       const { data } = await axios.get(`${ZAP_API}/JSON/ascan/view/status/`, {
@@ -101,7 +104,7 @@ app.post("/scan", async (req, res) => {
       await new Promise(r => setTimeout(r, 2000));
     }
 
-    // 5. Récupération des vulnérabilités
+    //Récupération des vulnérabilités trouves 
     const alertsRes = await axios.get(`${ZAP_API}/JSON/core/view/alerts/`, {
       params: { apikey: ZAP_API_KEY, baseurl: url }
     });
@@ -124,7 +127,7 @@ app.post("/scan", async (req, res) => {
   }
 });
 
-// ✅ Route génération PDF
+//Route génération PDF
 app.post("/generate-report", async (req, res) => {
   const { vulnerabilities } = req.body;
 
@@ -132,24 +135,47 @@ app.post("/generate-report", async (req, res) => {
     return res.status(400).json({ error: "No vulnerabilities provided" });
   }
 
-  const doc = new PDFDocument();
-  const filePath = "security_report.pdf";
-  doc.pipe(fs.createWriteStream(filePath));
+  try {
+    // Génération dynamique d'un nom de fichier unique
+    const timestamp = Date.now();
+    const filePath = `security_report_${timestamp}.pdf`;
 
-  doc.fontSize(20).text("Rapport de Sécurité ShadowTrace", { align: "center" });
-  doc.moveDown();
+    const doc = new PDFDocument();
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
 
-  vulnerabilities.forEach((vuln, index) => {
-    doc.fontSize(14).text(`${index + 1}. ${vuln.name}`);
-    doc.fontSize(12).text(`Risque: ${vuln.risk}`, { indent: 20 });
-    doc.fontSize(12).text(`URL: ${vuln.url}`, { indent: 20 });
-    doc.fontSize(12).text(`Description: ${vuln.description}`, { indent: 20 });
-    doc.fontSize(12).text(`Solution: ${vuln.fix}`, { indent: 20 });
+    // Titre
+    doc.fontSize(20).text("Rapport de Sécurité - ShadowTrace", { align: "center" });
     doc.moveDown();
-  });
 
-  doc.end();
-  res.download(filePath);
+    // Contenu des vulnérabilités
+    vulnerabilities.forEach((vuln, index) => {
+      doc.fontSize(14).text(`${index + 1}. ${vuln.name}`);
+      doc.fontSize(12).text(`Risque : ${vuln.risk}`, { indent: 20 });
+      doc.fontSize(12).text(`URL : ${vuln.url}`, { indent: 20 });
+      doc.fontSize(12).text(`Description : ${vuln.description}`, { indent: 20 });
+      doc.fontSize(12).text(`Solution : ${vuln.fix}`, { indent: 20 });
+      doc.moveDown();
+    });
+
+    doc.end();
+
+    // Attendre que le fichier soit écrit avant de l'envoyer
+    writeStream.on("finish", () => {
+      res.download(filePath, (err) => {
+        if (err) {
+          console.error("Erreur lors du téléchargement :", err);
+          res.status(500).json({ error: "Failed to send the PDF file." });
+        } else {
+          fs.unlink(filePath, () => {}); // Supprime le fichier après envoi (optionnel)
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Erreur génération rapport :", err.message);
+    res.status(500).json({ error: "Erreur serveur lors de la génération du PDF." });
+  }
 });
 
-app.listen(PORT, () => console.log(`✅ Serveur lancé sur le port ${PORT}`));
+
+app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
