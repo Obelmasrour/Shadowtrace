@@ -136,38 +136,55 @@ app.post("/generate-report", async (req, res) => {
   }
 
   try {
-    // Génération dynamique d'un nom de fichier unique
     const timestamp = Date.now();
     const filePath = `security_report_${timestamp}.pdf`;
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 40 });
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
 
-    // Titre
-    doc.fontSize(20).text("Rapport de Sécurité - ShadowTrace", { align: "center" });
-    doc.moveDown();
+    // 🔺 Titre stylisé
+    doc.fontSize(22).fillColor('#e60000').text("Rapport de Sécurité - ShadowTrace", { align: "center" });
+    doc.moveDown(1.5);
 
-    // Contenu des vulnérabilités
+    // 🧩 Mise en forme stylée
     vulnerabilities.forEach((vuln, index) => {
-      doc.fontSize(14).text(`${index + 1}. ${vuln.name}`);
-      doc.fontSize(12).text(`Risque : ${vuln.risk}`, { indent: 20 });
-      doc.fontSize(12).text(`URL : ${vuln.url}`, { indent: 20 });
-      doc.fontSize(12).text(`Description : ${vuln.description}`, { indent: 20 });
-      doc.fontSize(12).text(`Solution : ${vuln.fix}`, { indent: 20 });
-      doc.moveDown();
+      // 🎨 Couleur selon le niveau de risque
+      let color = "#000000";
+      switch (vuln.risk.toLowerCase()) {
+        case "high": color = "#cc0000"; break;
+        case "medium": color = "#e69100"; break;
+        case "low": color = "#3366cc"; break;
+        case "informational": color = "#999999"; break;
+      }
+
+      doc
+        .fontSize(14)
+        .fillColor('#000000')
+        .text(`${index + 1}. ${vuln.name}`);
+
+      doc
+        .fontSize(12)
+        .fillColor(color)
+        .text(`Risque : ${vuln.risk}`, { indent: 20 });
+
+      doc
+        .fillColor('#000000')
+        .text(`URL : ${vuln.url}`, { indent: 20 })
+        .text(`Description : ${vuln.description}`, { indent: 20 })
+        .text(`Solution : ${vuln.fix}`, { indent: 20 })
+        .moveDown(1.2);
     });
 
     doc.end();
 
-    // Attendre que le fichier soit écrit avant de l'envoyer
     writeStream.on("finish", () => {
       res.download(filePath, (err) => {
         if (err) {
           console.error("Erreur lors du téléchargement :", err);
           res.status(500).json({ error: "Failed to send the PDF file." });
         } else {
-          fs.unlink(filePath, () => {}); // Supprime le fichier après envoi (optionnel)
+          fs.unlink(filePath, () => {}); // Supprime après envoi
         }
       });
     });
